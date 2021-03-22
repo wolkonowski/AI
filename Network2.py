@@ -6,13 +6,12 @@ import copy
 
 class Network(object):
     def __init__(self, neutrons):
-        self.lr = 0.003
-        self.deltax = 0.01
+        self.lr = 4
+        self.deltax = 0.001
         self.batchSize = 2
-        self.epochs = 2
+        self.epochs = 50
         self.neutrons = neutrons
         self.layers = len(neutrons)
-        
         # generate biases for all layers except for input one
         self.biases = [np.random.rand(neutron, 1) for neutron in neutrons[1:]]
         # generate weights for all connections between i-th and (i+1)-th layer
@@ -27,14 +26,14 @@ class Network(object):
         # a <- input vector
         for w, b in zip(self.weights, self.biases):
             # apply sigmoid to each layer
-            a = sigmoid(np.dot(w, a)+b)
+            a = sigmoid(np.dot(w, a)-b)
             # multiplication of matrix and vector + vector = vector
         return a
 
     def diffForward(self, a, weights, biases):
         for w, b in zip(weights, biases):
             # apply sigmoid to each layer
-            a = sigmoid(np.dot(w, a)+b)
+            a = sigmoid(np.dot(w, a)-b)
             # multiplication of matrix and vector + vector = vector
         return a
 
@@ -58,16 +57,14 @@ class Network(object):
             cost2 += np.linalg.norm(c - np.transpose(self.diffForward(np.transpose([a]), w, b)[0]))
         cost2 /= len(self.correct)
         diff = cost2 - self.totalCost(self.data, self.correct)
-        # print(diff)
         return diff
 
     def trainBatch(self, batchSize):
         correctC = copy.deepcopy(self.correct)
         arrayC = copy.deepcopy(self.data)
         while(len(correctC) > 0):
-            deltaw = [np.zeros((right, left)) for left, right in
-                      zip(self.neutrons[:-1], self.neutrons[1:])]
-            deltab = [np.zeros((neutron, 1)) for neutron in self.neutrons[1:]]
+            deltaw = [np.zeros(w.shape) for w in self.weights]
+            deltab = [np.zeros(b.shape) for b in self.biases]
 
             for _ in range(batchSize):
                 if(len(correctC) == 0):
@@ -78,40 +75,49 @@ class Network(object):
                 arrayC.pop(r)
                 correctC.pop(r)
                 result = self.train(inputA, correctA)
-                for x in range(len(self.weights)):
-                    for y in range(len(self.weights[x])):
-                        deltaw[x][y] += result[0][x][y]
+                for w in range(len(self.weights)):
+                    for x in range(len(self.weights)):
+                        for y in range(len(self.weights[x])):
+                            for z in range(len(self.weights[x][y])):
+                                deltaw[x][y][z] += result[0][x][y][z]
+                                print(deltaw[x][y][z])
                 for x in range(len(self.biases)):
                     for y in range(len(self.biases[x])):
-                        deltab[x][y] += result[1][x][y]
+                        for z in range(len(self.biases[x][y])):
+                            deltab[x][y][z] += result[1][x][y][z]
             for x in range(len(self.weights)):
                 for y in range(len(self.weights[x])):
-                    self.weights[x][y] -= deltaw[x][y]/self.deltax
+                    for z in range(len(self.weights[x][y])):
+                        self.weights[x][y][z] -= deltaw[x][y][z]/batchSize*self.lr
             for x in range(len(self.biases)):
                 for y in range(len(self.biases[x])):
-                    self.biases[x][y] -= deltab[x][y]/self.deltax
+                    for z in range(len(self.biases[x][y])):
+                        self.biases[x][y][z] -= deltab[x][y][z]/batchSize*self.lr
 
     def train(self, inp, out):
         biasesC = copy.deepcopy(self.biases)
         weightsC = copy.deepcopy(self.weights)
-        weightsD = [np.zeros((right, left)) for left, right in
-                    zip(self.neutrons[:-1], self.neutrons[1:])]
-        biasesD = [np.zeros((neutron, 1)) for neutron in self.neutrons[1:]]
-        for j in range(len(self.biases)):
-            for i in range(len(self.biases[j])):
-                biasesC[j][i] += self.deltax
-                biasesD[j][i] = self.diffCost(weightsC, biasesC) 
-                biasesC[j][i] -= self.deltax
-        for j in range(len(self.weights)):
-            for i in range(len(self.weights[j])):
-                weightsC[j][i] += self.deltax
-                weightsD[j][i] = self.diffCost(weightsC, biasesC) 
-                weightsC[j][i] -= self.deltax
+        weightsD = [np.zeros(w.shape) for w in self.weights]
+        biasesD = [np.zeros(b.shape) for b in self.biases]
+        for i in range(len(self.biases)):
+            for j in range(len(self.biases[i])):
+                for k in range(len(self.biases[i][j])):
+                    biasesC[i][j][k] += self.deltax
+                    biasesD[i][j][k] = self.diffCost(weightsC, biasesC)
+                    biasesC[i][j][k] -= self.deltax
+        for i in range(len(self.weights)):
+            for j in range(len(self.weights[i])):
+                for k in range(len(self.biases[i][j])):
+                    weightsC[i][j][k] += self.deltax
+                    weightsD[i][j][k] = self.diffCost(weightsC, biasesC)
+                    weightsC[i][j][k] -= self.deltax
         x = [weightsD, biasesD]
         return x
 
     def SGD(self):
         print(self.totalCost(self.data, self.correct))
+        print(self.start(self.data[0]))
+        print(self.start(self.data[1]))
         for _ in range(self.epochs):
             self.trainBatch(self.batchSize)
         print(self.totalCost(self.data, self.correct))

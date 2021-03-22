@@ -6,7 +6,7 @@ import copy
 
 class Network(object):
     def __init__(self, neutrons):
-        self.lr = 0.03
+        self.lr = 1
         self.deltax = 0.001
         self.batchSize = 2
         self.epochs = 200
@@ -56,9 +56,8 @@ class Network(object):
         correctC = copy.deepcopy(correct)
         arrayC = copy.deepcopy(array)
         while(len(correctC) > 0):
-            deltaw = [np.zeros((right, left)) for left, right in
-                      zip(self.neutrons[:-1], self.neutrons[1:])]
-            deltab = [np.zeros((neutron, 1)) for neutron in self.neutrons[1:]]
+            deltaw = [np.zeros(w.shape) for w in self.weights]
+            deltab = [np.zeros(b.shape) for b in self.biases]
 
             for _ in range(batchSize):
                 if(len(correctC) == 0):
@@ -71,40 +70,49 @@ class Network(object):
                 result = self.train(inputA, correctA)
                 for x in range(len(self.weights)):
                     for y in range(len(self.weights[x])):
-                        deltaw[x][y] += result[0][x][y]
+                        for z in range(len(self.weights[x][y])):
+                            deltaw[x][y][z] += result[0][x][y][z]
                 for x in range(len(self.biases)):
                     for y in range(len(self.biases[x])):
-                        deltab[x][y] += result[1][x][y]
+                        for z in range(len(self.biases[x][y])):
+                            deltab[x][y][z] += result[1][x][y][z]
             for x in range(len(self.weights)):
                 for y in range(len(self.weights[x])):
-                    self.weights[x][y] -= self.lr*deltaw[x][y]/batchSize
+                    for z in range(len(self.weights[x][y])):
+                        self.weights[x][y][z] -= self.lr*deltaw[x][y][z] / \
+                            batchSize
             for x in range(len(self.biases)):
                 for y in range(len(self.biases[x])):
-                    self.biases[x][y] -= self.lr*deltab[x][y]/batchSize
+                    for z in range(len(self.biases[x][y])):
+                        self.biases[x][y][z] -= self.lr*deltab[x][y][z] / \
+                            batchSize
 
     def train(self, inp, out):
         biasesC = copy.deepcopy(self.biases)
         weightsC = copy.deepcopy(self.weights)
-        weightsD = [np.zeros((right, left)) for left, right in
-                    zip(self.neutrons[:-1], self.neutrons[1:])]
-        biasesD = [np.zeros((neutron, 1)) for neutron in self.neutrons[1:]]
-        for j in range(len(self.biases)):
-            for i in range(len(self.biases[j])):
-                biasesC[j][i] += self.deltax
-                biasesD[j][i] = self.diffCost(inp, out, weightsC, biasesC) / \
-                    self.deltax
-                biasesC[j][i] -= self.deltax
-        for j in range(len(self.weights)):
-            for i in range(len(self.weights[j])):
-                weightsC[j][i] += self.deltax
-                weightsD[j][i] = self.diffCost(inp, out, weightsC, biasesC) / \
-                    self.deltax
-                weightsC[j][i] -= self.deltax
+        weightsD = [np.zeros(w.shape) for w in self.weights]
+        biasesD = [np.zeros(b.shape) for b in self.biases]
+        for i in range(len(self.biases)):
+            for j in range(len(self.biases[i])):
+                for k in range(len(self.biases[i][j])):
+                    biasesC[i][j][k] += self.deltax
+                    biasesD[i][j][k] = self.diffCost(
+                        inp, out, weightsC, biasesC) / self.deltax
+                    biasesC[i][j][k] -= self.deltax
+        for i in range(len(self.weights)):
+            for j in range(len(self.weights[i])):
+                for k in range(len(self.weights[i][j])):
+                    weightsC[i][j][k] += self.deltax
+                    weightsD[i][j][k] = self.diffCost(
+                        inp, out, weightsC, biasesC) / self.deltax
+                    weightsC[i][j][k] -= self.deltax
         x = [weightsD, biasesD]
         return x
 
     def SGD(self, array, correct):
         print(self.totalCost(array, correct))
+        print(self.start(array[0]))
+        print(self.start(array[1]))
         for _ in range(self.epochs):
             self.trainBatch(array, correct, self.batchSize)
         print(self.totalCost(array, correct))
