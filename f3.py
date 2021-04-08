@@ -6,6 +6,7 @@ def generator(num, size, inputs, correct):
     """Generate random input and correct output for it"""
     for _ in range(num):
         array = np.random.rand(size)
+        array = array / np.linalg.norm(array)	# normalisation - mgc
         inputs.append(array)
         c = [1 if elem == max(array) else 0 for elem in array]
         correct.append(c)

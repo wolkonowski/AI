@@ -1,4 +1,4 @@
-from functions import *
+from f3 import *
 import numpy as np
 import random
 import copy
@@ -8,8 +8,8 @@ class Network(object):
     def __init__(self, neutrons):
         self.lr = 1
         self.deltax = 0.001
-        self.batchSize = 5
-        self.epochs = 30
+        self.batchSize = 10	 # for 200 examples - mgc
+        self.epochs = 1000  # mgc
         self.neutrons = neutrons
         self.layers = len(neutrons)
 
@@ -49,13 +49,13 @@ class Network(object):
         for a, c in zip(array, correct):
             """ "c" is an array, "a" is a vertical vector so we
             have to transpose "a" (we get matrix) and select first row ([0])"""
-            sum += np.linalg.norm(c-np.transpose(self.start(a))[0])
+            sum += np.linalg.norm(c-np.transpose(self.start(a))[0])**2
         return sum/(2*len(correct))
 
     def cost(self, array, correct):
         """Calculate cost just for one input"""
         c = np.linalg.norm(correct-np.transpose(self.start(array))[0])
-        return c
+        return c**2
 
     def diffCost(self, array, correct, w, b):
         """Calculate differences of costs for the single input between
@@ -63,7 +63,7 @@ class Network(object):
         original cost for those input"""
         cost2 = np.linalg.norm(correct-np.transpose(
             self.diffForward(np.transpose([array]), w, b))[0])
-        return cost2 - self.cost(array, correct)
+        return cost2**2
 
     def trainBatch(self, array, correct, batchSize):
         """Train the whole given inputs"""
@@ -116,6 +116,7 @@ class Network(object):
     def train(self, inp, out):
         """Copy all biases and weights and generate proper arrays of
         matrixes for partial derivatives"""
+        cost = self.cost(inp, out)
         biasesC = copy.deepcopy(self.biases)
         weightsC = copy.deepcopy(self.weights)
         weightsD = [np.zeros(w.shape) for w in self.weights]
@@ -127,15 +128,15 @@ class Network(object):
             for j in range(len(self.biases[i])):
                 for k in range(len(self.biases[i][j])):
                     biasesC[i][j][k] += self.deltax
-                    biasesD[i][j][k] = self.diffCost(
-                        inp, out, weightsC, biasesC) / self.deltax
+                    biasesD[i][j][k] = (self.diffCost(
+                        inp, out, weightsC, biasesC) - cost) / self.deltax
                     biasesC[i][j][k] -= self.deltax
         for i in range(len(self.weights)):
             for j in range(len(self.weights[i])):
                 for k in range(len(self.weights[i][j])):
                     weightsC[i][j][k] += self.deltax
-                    weightsD[i][j][k] = self.diffCost(
-                        inp, out, weightsC, biasesC) / self.deltax
+                    weightsD[i][j][k] = (self.diffCost(
+                        inp, out, weightsC, biasesC) - cost) / self.deltax
                     weightsC[i][j][k] -= self.deltax
         """Pack output into one array"""
         x = [weightsD, biasesD]
@@ -144,27 +145,37 @@ class Network(object):
     def SGD(self, array, correct):
         """For each epoch train the whole input"""
         print("Start cost:", self.totalCost(array, correct))
-        for _ in range(self.epochs):
+        for i in range(self.epochs):
             self.trainBatch(array, correct, self.batchSize)
-        print("End cost:", self.totalCost(array, correct))
+            print(f"cost ({i}): {self.totalCost(array, correct)}")
 
     def show(self, array, correct):
         """Show input, output and correct (desirable) output for each input"""
         for a, c in zip(array, correct):
-            print("in:", a,
-                  "out:", np.transpose(self.start(a))[0], "correct:", c)
+            print(
+                f"in: {a} out: {np.transpose(self.start(a))[0]} correct: {c}")
+
+    def test(self, array, correct):
+        """Show input, output and correct (desirable) output for each input"""
+        num = 0
+        for a, c in zip(array, correct):
+            r = np.transpose(self.start(a))[0]
+            print(f"in: {a} out: {r} correct: {c}")
+            if(np.where(r == max(r))[0][0] == c.index(max(c))):
+                num += 1
+        print(f"Poprawne: {num} ogółem {len(correct)}")
 
 
 """Initialize our Network"""
 p = Network([4, 10, 11, 4])
-
+np.set_printoptions(precision=2, suppress=True)
 inputs = []
 correct = []
 
 """Generate input, train it and show results"""
-generator(20, 4, inputs, correct)
+generator(200, 4, inputs, correct)  # mgc
 p.SGD(inputs, correct)
-p.show(inputs, correct)
+p.test(inputs, correct)
 
 
 # p.SGD([[0.2, 0.1, 0.7, 0.1], [0.8, 0.9, 0.1, 0.1]],
