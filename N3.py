@@ -9,7 +9,7 @@ class Network(object):
         self.lr = 1
         self.deltax = 0.001
         self.batchSize = 10	 # for 200 examples - mgc
-        self.epochs = 1000  # mgc
+        self.epochs = 500  # 1000 - reference
         self.neutrons = neutrons
         self.layers = len(neutrons)
 
@@ -66,28 +66,32 @@ class Network(object):
         return cost2**2
 
     def trainBatch(self, array, correct, batchSize):
-        """Train the whole given inputs"""
+        # FIX
+        """Train all the given inputs"""
 
         """Copy all arrays of inputs and corrects to randomly pick them
         (and then delete) to train"""
-        correctC = copy.deepcopy(correct)
-        arrayC = copy.deepcopy(array)
-        while(len(correctC) > 0):
+        # correctC = copy.deepcopy(correct)
+        # arrayC = copy.deepcopy(array)
+        """Deprecated, using only list of indexes instead
+        of deepcopying arrays"""
+        indexes = [i for i in range(0, len(correct))]
+        while(len(indexes) > 0):
             """Create matrixes for partial derivatives"""
             deltaw = [np.zeros(w.shape) for w in self.weights]
             deltab = [np.zeros(b.shape) for b in self.biases]
 
             for _ in range(batchSize):
-                if(len(correctC) == 0):
+                if(len(indexes) == 0):
                     """If we are out of inputs"""
                     break
                 """Pick a random element in array, save it,
                 pop it and train it"""
-                r = random.randint(0, len(correctC)-1)
-                inputA = arrayC[r]
-                correctA = correctC[r]
-                arrayC.pop(r)
-                correctC.pop(r)
+                r = random.randint(0, len(indexes)-1)
+                index = indexes[r]  # changes here
+                inputA = array[index]
+                correctA = correct[index]
+                indexes.pop(r)
                 nablaw, nablab = self.train(inputA, correctA)
                 """ "deltaw" and "deltab" are arrays of matrixes and we
                 have to add results to them respectively"""
@@ -115,9 +119,13 @@ class Network(object):
     def train(self, inp, out):
         """Copy all biases and weights and generate proper arrays of
         matrixes for partial derivatives"""
+
         cost = self.cost(inp, out)
-        biasesC = copy.deepcopy(self.biases)
-        weightsC = copy.deepcopy(self.weights)
+        # biasesC = copy.deepcopy(self.biases)
+        # weightsC = copy.deepcopy(self.weights)
+        """Deprecated, cost is calculated before so there is
+        no need to work on copied arrays"""
+
         weightsD = [np.zeros(w.shape) for w in self.weights]
         biasesD = [np.zeros(b.shape) for b in self.biases]
         """For each bias and weight:
@@ -126,19 +134,19 @@ class Network(object):
         for i in range(len(self.biases)):
             for j in range(len(self.biases[i])):
                 for k in range(len(self.biases[i][j])):
-                    biasesC[i][j][k] += self.deltax
-                    biasesD[i][j][k] = (self.diffCost(
-                        inp, out, weightsC, biasesC) - cost) / self.deltax
-                    biasesC[i][j][k] -= self.deltax
+                    self.biases[i][j][k] += self.deltax  # changes here
+                    biasesD[i][j][k] = (self.cost(
+                        inp, out) - cost) / self.deltax
+                    self.biases[i][j][k] -= self.deltax
         for i in range(len(self.weights)):
             for j in range(len(self.weights[i])):
                 for k in range(len(self.weights[i][j])):
-                    weightsC[i][j][k] += self.deltax
-                    weightsD[i][j][k] = (self.diffCost(
-                        inp, out, weightsC, biasesC) - cost) / self.deltax
-                    weightsC[i][j][k] -= self.deltax
+                    self.weights[i][j][k] += self.deltax
+                    weightsD[i][j][k] = (self.cost(
+                        inp, out) - cost) / self.deltax
+                    self.weights[i][j][k] -= self.deltax
         """Return all derivatives"""
-        return weightsD, biasesD
+        return weightsD, biasesD  # change here
 
     def SGD(self, array, correct):
         """For each epoch train the whole input"""
@@ -171,11 +179,18 @@ inputs = []
 correct = []
 
 """Generate input, train it and show results"""
-generator(200, 4, inputs, correct)  # mgc
+generator(200, 4, inputs, correct)
 p.SGD(inputs, correct)
 p.test(inputs, correct)
-
-
+generator(200, 4, inputs, correct)
+p.test(inputs, correct)
 # p.SGD([[0.2, 0.1, 0.7, 0.1], [0.8, 0.9, 0.1, 0.1]],
 #       [[0, 0, 1, 0], [0, 1, 0, 0]])
 # print(p.cost([-19, 2, 3, 4], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]))
+
+# zapis do pliku
+# wredne przypadki
+# zmiana testu
+# małe próbki
+# co 100 epok test sieci
+# testy deltax i lr
