@@ -88,18 +88,17 @@ class Network(object):
                 correctA = correctC[r]
                 arrayC.pop(r)
                 correctC.pop(r)
-                result = self.train(inputA, correctA)
-                """ "result[0]" <- nablaw, "result[1]" <- nablab
-                "deltaw" and "deltab" are arrays of matrixes and we
+                nablaw, nablab = self.train(inputA, correctA)
+                """ "deltaw" and "deltab" are arrays of matrixes and we
                 have to add results to them respectively"""
                 for x in range(len(self.weights)):
                     for y in range(len(self.weights[x])):
                         for z in range(len(self.weights[x][y])):
-                            deltaw[x][y][z] += result[0][x][y][z]
+                            deltaw[x][y][z] += nablaw[x][y][z]
                 for x in range(len(self.biases)):
                     for y in range(len(self.biases[x])):
                         for z in range(len(self.biases[x][y])):
-                            deltab[x][y][z] += result[1][x][y][z]
+                            deltab[x][y][z] += nablab[x][y][z]
             """ Then we have to change out weights and biases respectively,
             modyfying it by learning rate"""
             for x in range(len(self.weights)):
@@ -138,9 +137,8 @@ class Network(object):
                     weightsD[i][j][k] = (self.diffCost(
                         inp, out, weightsC, biasesC) - cost) / self.deltax
                     weightsC[i][j][k] -= self.deltax
-        """Pack output into one array"""
-        x = [weightsD, biasesD]
-        return x
+        """Return all derivatives"""
+        return weightsD, biasesD
 
     def SGD(self, array, correct):
         """For each epoch train the whole input"""
