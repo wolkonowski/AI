@@ -3,13 +3,29 @@ import numpy as np
 
 
 def generator(num, size, inputs, correct):
-    """Generate random input and correct output for it"""
+    """Clear arrays and generate random input and correct output for it"""
+    inputs.clear()
+    correct.clear()
     for _ in range(num):
         array = np.random.rand(size)
-        array = array / np.linalg.norm(array)  # normalisation - mgc
+        array = normalize(array)
         inputs.append(array)
         c = [1 if elem == max(array) else 0 for elem in array]
         correct.append(c)
+
+
+def evilGenerate(num, size, inputs):
+    """Generate evil input"""
+    inputs.clear()
+    for _ in range(num):
+        array = np.random.rand(size)
+        m = np.where(array == max(array))[0][0]
+        r = np.random.randint(size)
+        while m == r:
+            r = np.random.randint(size)
+        array[r] = array[m]
+        array = normalize(array)
+        inputs.append(array)
 
 
 def activation(z):
@@ -33,3 +49,7 @@ def ReLU(z):
 
 def insideReLU(x):
     return x if x >= 0 else 0
+
+
+def normalize(array):
+    return (array / np.linalg.norm(array))
