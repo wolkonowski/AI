@@ -34,12 +34,25 @@ def activation(z):
     # return ReLU(z)
 
 
+def activation_prime(z):
+    return sigmoid_prime(z)
+    # return tanh_prime(z)
+
+
 def sigmoid(z):
     return 1.0/(1+np.exp(-z))
 
 
+def sigmoid_prime(z):
+    return sigmoid(z)*(1.0-sigmoid(z))
+
+
 def tanh(z):
     return np.tanh(z)
+
+
+def tanh_prime(z):
+    return 1-np.tanh(z)
 
 
 def ReLU(z):

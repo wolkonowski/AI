@@ -1,13 +1,12 @@
-from f3 import *
+from f4 import *
 import numpy as np
 import random
 import copy
 
 
 class Network(object):
-    def __init__(self, neutrons, deltax=None, batchSize=None, epochs=None):
-        self.lr = 3
-        self.deltax = deltax if deltax else 0.001  # 0.001 - reference
+    def __init__(self, neutrons, batchSize=None, epochs=None):
+        self.lr = 1.0
         self.batchSize = batchSize if batchSize else 10	 # 10 for 200 examples
         self.epochs = epochs if epochs else 2000  # 1000 - reference
         self.neutrons = neutrons
@@ -31,12 +30,6 @@ class Network(object):
             a = activation(np.dot(w, a)+b)
         return a
 
-    def diffForward(self, a, weights, biases):
-        """Same as "forward" but with custom weights and biases"""
-        for w, b in zip(weights, biases):
-            a = activation(np.dot(w, a)+b)
-        return a
-
     def start(self, a):
         """"Make an matrix out of array, transpose it (you get vertical vector)
         and send it to "forward"""
@@ -57,15 +50,6 @@ class Network(object):
         c = np.linalg.norm(correct-np.transpose(self.start(array))[0])
         return c**2
 
-    def diffCost(self, array, correct, w, b):
-        # DEPRECATED
-        """Calculate differences of costs for the single input between
-        "cost2" with custom weights and biases and
-        original cost for those input"""
-        cost2 = np.linalg.norm(correct-np.transpose(
-            self.diffForward(np.transpose([array]), w, b))[0])
-        return cost2**2
-
     def trainBatch(self, array, correct, batchSize):
         """Train some of the given inputs"""
         """Generate list of possible indexes"""
@@ -81,70 +65,54 @@ class Network(object):
             """Pick a random element in array, save it,
             pop it and train it"""
             r = random.randint(0, len(indexes)-1)
-            index = indexes[r]  # changes here
+            index = indexes[r]
             inputA = array[index]
             correctA = correct[index]
             indexes.pop(r)
-            nablaw, nablab = self.train(inputA, correctA)
+            miniw, minib = self.train(
+                np.transpose([inputA]), np.transpose([correctA]))
             """ "deltaw" and "deltab" are arrays of matrixes and we
             have to add results to them respectively"""
-            for x in range(len(self.weights)):
-                for y in range(len(self.weights[x])):
-                    for z in range(len(self.weights[x][y])):
-                        deltaw[x][y][z] += nablaw[x][y][z]
-            for x in range(len(self.biases)):
-                for y in range(len(self.biases[x])):
-                    for z in range(len(self.biases[x][y])):
-                        deltab[x][y][z] += nablab[x][y][z]
+            for dw, miw in zip(deltaw, miniw):
+                dw += miw
+            for db, mib in zip(deltab, minib):
+                db += mib
         """ Then we have to change out weights and biases respectively,
         modyfying it by learning rate"""
-        for x in range(len(self.weights)):
-            for y in range(len(self.weights[x])):
-                for z in range(len(self.weights[x][y])):
-                    self.weights[x][y][z] -= self.lr*deltaw[x][y][z] / \
-                        batchSize
-        for x in range(len(self.biases)):
-            for y in range(len(self.biases[x])):
-                for z in range(len(self.biases[x][y])):
-                    self.biases[x][y][z] -= self.lr*deltab[x][y][z] / \
-                        batchSize
+        for w, dw in zip(self.weights, deltaw):
+            w -= (self.lr/batchSize) * dw
+        for b, db in zip(self.biases, deltab):
+            b -= (self.lr/batchSize) * db
 
     def train(self, inp, out):
-        """Copy all biases and weights and generate proper arrays of
-        matrixes for partial derivatives"""
-
-        cost = self.cost(inp, out)
-        weightsD = [np.zeros(w.shape) for w in self.weights]
-        biasesD = [np.zeros(b.shape) for b in self.biases]
-        """For each bias and weight:
-        add "deltax", calculate derivative for that change,
-        substract "deltax" """
-        for i in range(len(self.biases)):
-            for j in range(len(self.biases[i])):
-                for k in range(len(self.biases[i][j])):
-                    self.biases[i][j][k] += self.deltax  # changes here
-                    biasesD[i][j][k] = (self.cost(
-                        inp, out) - cost) / self.deltax
-                    self.biases[i][j][k] -= self.deltax
-        for i in range(len(self.weights)):
-            for j in range(len(self.weights[i])):
-                for k in range(len(self.weights[i][j])):
-                    self.weights[i][j][k] += self.deltax
-                    weightsD[i][j][k] = (self.cost(
-                        inp, out) - cost) / self.deltax
-                    self.weights[i][j][k] -= self.deltax
-        """Return derivatives"""
-        return weightsD, biasesD  # change here
+        a = inp
+        activations = []
+        zs = []
+        nablaw = [np.zeros(w.shape) for w in self.weights]
+        nablab = [np.zeros(b.shape) for b in self.biases]
+        activations.append(a)
+        for w, b in zip(self.weights, self.biases):
+            """Apply activation function to each layer
+            multiplication of matrix and vector + vector = vector"""
+            z = np.dot(w, a)+b
+            zs.append(z)
+            a = activation(z)
+            activations.append(a)
+        nablab[-1] = (a-out)*activation_prime(zs[-1])
+        nablaw[-1] = np.dot(nablab[-1], np.transpose(activations[-2]))
+        for i in range(2, self.layers):
+            nablab[-i] = \
+                np.dot(np.transpose(self.weights[-i+1]), nablab[-i+1]) * \
+                activation_prime(zs[-i])
+            nablaw[-i] = np.dot(nablab[-i], np.transpose(activations[-i-1]))
+        return nablaw, nablab
 
     def SGD(self, array, correct):
         """Train in epochs and show partial results"""
         print("Start cost:", self.totalCost(array, correct))
         for i in range(self.epochs):
             self.trainBatch(array, correct, self.batchSize)
-            if(i % 10 == 0):
-                print(f"cost ({i}): {self.totalCost(array, correct)}")
-            if((i+1) % 100 == 0):
-                self.test(array, correct)
+            print(f"cost ({i}): {self.totalCost(array, correct)}")
 
     def show(self, array, correct):
         """Show input, output and correct (desirable) output for each input"""
