@@ -37,6 +37,7 @@ def activation(z):
 def activation_prime(z):
     return sigmoid_prime(z)
     # return tanh_prime(z)
+    # return ReLU_prime(z)
 
 
 def sigmoid(z):
@@ -60,8 +61,17 @@ def ReLU(z):
     return vf(z)
 
 
+def ReLU_prime(z):
+    vf = np.vectorize(insideReLU_prime)
+    return vf(z)
+
+
 def insideReLU(x):
     return x if x >= 0 else 0
+
+
+def insideReLU_prime(x):
+    return 1 if x >= 0 else 0
 
 
 def normalize(array):

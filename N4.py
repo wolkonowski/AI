@@ -5,10 +5,10 @@ import copy
 
 
 class Network(object):
-    def __init__(self, neutrons, batchSize=None, epochs=None):
-        self.lr = 1.0
-        self.batchSize = batchSize if batchSize else 10	 # 10 for 200 examples
-        self.epochs = epochs if epochs else 2000  # 1000 - reference
+    def __init__(self, neutrons, batchSize=None, epochs=None, lr=None):
+        self.lr = lr if lr else 1.0
+        self.batchSize = batchSize if batchSize else 10
+        self.epochs = epochs if epochs else 2000
         self.neutrons = neutrons
         self.layers = len(neutrons)
 

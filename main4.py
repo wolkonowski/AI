@@ -3,7 +3,7 @@ from N4 import Network
 
 """Initialize our Network"""
 p = Network(
-    [4, 10, 4], batchSize=500, epochs=200)
+    [4, 10, 4], batchSize=100, epochs=1000, lr=1.0)
 np.set_printoptions(precision=2, suppress=True)
 inputs = []
 correct = []
@@ -22,3 +22,15 @@ print(p.biases)
 # p.SGD([[0.2, 0.1, 0.7, 0.1], [0.8, 0.9, 0.1, 0.1]],
 #       [[0, 0, 1, 0], [0, 1, 0, 0]])
 # print(p.cost([-19, 2, 3, 4], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]))
+
+"""
+TODO
+losowanie wag -1 do 1
+losowanie tylko -1 i 1
+losowanie wag -4 do 4
+losowanie wag -4 do 4 Gauss
+losowanie wag -4 do 4 Gauss^(-1)
+przesunięcia cykliczne i permutacje
+mt19937 do losowań
+htop
+"""
