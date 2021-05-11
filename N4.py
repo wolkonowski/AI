@@ -1,3 +1,6 @@
+from typing import Generator
+
+from numpy.core.fromnumeric import size
 from f4 import *
 import numpy as np
 import random
@@ -11,15 +14,16 @@ class Network(object):
         self.epochs = epochs if epochs else 2000
         self.neutrons = neutrons
         self.layers = len(neutrons)
-
+        gen = np.random.default_rng()
         """An array of vertical vectors with biases
         for every layer except for first one"""
-        self.biases = [np.random.rand(neutron, 1) for neutron in neutrons[1:]]
+        self.biases = [(gen.random((neutron, 1)))*2-1
+                       for neutron in neutrons[1:]]
 
         """An array of matrixes with weights
         between each two adjacent layers
         left from 0 to last-1, rigth from 1 to last"""
-        self.weights = [np.random.rand(right, left) for left, right
+        self.weights = [(gen.random(size=(right, left)))*2-1 for left, right
                         in zip(neutrons[:-1], neutrons[1:])]
 
     def forward(self, a):
