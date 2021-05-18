@@ -5,8 +5,8 @@ from N4 import Network
 p = Network(
     [4, 10, 4], batchSize=100, epochs=1000, lr=1.0)
 np.set_printoptions(precision=2, suppress=True)
-print(p.weights)
-print(p.biases)
+# print(p.weights)
+# print(p.biases)
 inputs = []
 correct = []
 
@@ -27,10 +27,13 @@ p.test(inputs, correct)
 """
 TODO
 losowanie wag -1 do 1 OK
-losowanie tylko -1 i 1 ??
+losowanie tylko -1 i 1 OK
 losowanie wag -4 do 4 OK
 losowanie wag -4 do 4 Gauss OK
 przesunięcia cykliczne i permutacje
 mt19937 do losowań OK
 htop
+
+
+MEDIANA - v5D
 """
