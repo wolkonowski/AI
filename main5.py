@@ -11,11 +11,17 @@ p = Network(
 np.set_printoptions(precision=2, suppress=True)
 # print(p.weights)
 # print(p.biases)
-inputs = [np.transpose(training_data[i][0])[0] for i in range(len(training_data))]
-correct = [np.transpose(training_data[i][1])[0] for i in range(len(training_data))]
+inputs = [np.transpose(training_data[i][0])[0]
+          for i in range(len(training_data))]
+correct = [np.transpose(training_data[i][1])[0]
+           for i in range(len(training_data))]
+test_data = list(test_data)
+testI = [np.transpose(test_data[i][0])[0] for i in range(len(test_data))]
+testC = [test_data[i][1] for i in range(len(test_data))]
+testC = [[1 if x == c else 0 for x in range(0, 10)] for c in testC]
 """Generate input, train it and show results"""
 p.SGD(inputs, correct)
-p.test(inputs, correct)
+p.test(testI, testC)
 stream = open('data.pickle', 'w+b')
 pickle.dump(p, stream)
 stream.close()

@@ -11,6 +11,7 @@ class Network(object):
         self.lr = lr if lr else 1.0
         self.batchSize = batchSize if batchSize else 10
         self.epochs = epochs if epochs else 2000
+        self.totalEpochs = 0
         self.neutrons = neutrons
         self.layers = len(neutrons)
         gen = np.random.default_rng()
@@ -115,7 +116,8 @@ class Network(object):
         print("Start cost:", self.totalCost(array, correct))
         for i in range(self.epochs):
             self.trainBatch(array, correct, self.batchSize)
-            print(f"cost ({i}): {self.totalCost(array, correct)}")
+            print(f"cost ({self.totalEpochs+i+1})\
+                : {self.totalCost(array, correct)}")
             if(i % 10 == 0):
                 self.test(array, correct)
 
